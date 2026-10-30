@@ -1,0 +1,16 @@
+{
+  "name": "fluxa-backend",
+  "version": "1.0.0",
+  "description": "Servidor inicial do projeto Fluxa",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}
