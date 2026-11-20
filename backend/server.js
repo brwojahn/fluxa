@@ -6,6 +6,10 @@ const corsMiddleware = require('./middleware/corsMiddleware');
 const amostrasRoutes = require('./routes/amostrasRoutes');
 const authRoutes = require('./routes/authRoutes');
 const usuariosRoutes = require('./routes/usuariosRoutes');
+const fornecedoresRoutes = require('./routes/fornecedoresRoutes');
+const clientesRoutes = require('./routes/clientesRoutes');
+const enviosRoutes = require('./routes/enviosRoutes');
+const indicadoresRoutes = require('./routes/indicadoresRoutes');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -29,7 +33,11 @@ app.get('/api/health/database', async (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/fornecedores', fornecedoresRoutes);
+app.use('/api/clientes', clientesRoutes);
 app.use('/api/amostras', amostrasRoutes);
+app.use('/api/envios', enviosRoutes);
+app.use('/api/indicadores', indicadoresRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ status: 'error', message: 'Rota não encontrada.' });

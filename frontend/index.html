@@ -3,28 +3,127 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fluxa</title>
+    <title>Fluxa | Rastreabilidade de amostras</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="container">
-      <section class="card">
-        <p class="eyebrow">Entrega 1</p>
-        <h1>Fluxa</h1>
-        <p class="lead">
-          Sistema de rastreabilidade de amostras comerciais de café verde em fase de
-          planejamento e estrutura inicial.
-        </p>
-        <ul class="feature-list">
-          <li>Registro e organização de amostras recebidas.</li>
-          <li>Consulta de inventário e histórico de movimentações.</li>
-          <li>Controle de fornecedores, clientes e usuários.</li>
-          <li>Estrutura preparada para futuras integrações com backend, banco de dados e relatórios.</li>
-        </ul>
-        <p class="status">Status: documentação e estrutura inicial em desenvolvimento.</p>
+      <header class="topbar">
+        <div><p class="eyebrow">Rastreabilidade de café verde</p><h1>Fluxa</h1></div>
+        <div id="user-session" class="hidden"><span id="user-label"></span><button id="logout-button" class="secondary">Sair</button></div>
+      </header>
+
+      <section id="auth-section" class="card narrow">
+        <h2 id="auth-title">Entrar</h2>
+        <form id="auth-form">
+          <label id="name-field" class="hidden">Nome<input name="nome" minlength="2" maxlength="120" /></label>
+          <label>E-mail<input name="email" type="email" autocomplete="username" required /></label>
+          <label>Senha<input name="senha" type="password" minlength="8" autocomplete="current-password" required /></label>
+          <button id="auth-submit" type="submit">Entrar</button>
+        </form>
+        <p id="auth-message" class="message" role="status"></p>
+        <button id="auth-toggle" class="link-button">Primeiro acesso? Criar conta</button>
+      </section>
+
+      <section id="app-section" class="hidden">
+        <div id="supplier-card" class="card hidden">
+          <h2 id="supplier-title">Fornecedores</h2>
+          <form id="supplier-form" class="inline-form">
+            <input name="id" type="hidden" />
+            <label>Código<input name="codigo" maxlength="30" required /></label>
+            <label>Nome<input name="nome" maxlength="160" required /></label>
+            <button id="supplier-submit" type="submit">Adicionar fornecedor</button>
+            <button id="supplier-cancel" class="secondary hidden" type="button">Cancelar</button>
+          </form>
+          <p id="supplier-message" class="message" role="status"></p>
+          <div class="table-wrap"><table><thead><tr><th>Código</th><th>Fornecedor</th><th>Ações</th></tr></thead><tbody id="suppliers-body"></tbody></table></div>
+        </div>
+
+        <div id="client-card" class="card hidden">
+          <h2 id="client-title">Clientes</h2>
+          <form id="client-form" class="inline-form">
+            <input name="id" type="hidden" />
+            <label>Nome<input name="nome" maxlength="160" required /></label>
+            <label>País<input name="pais" maxlength="100" /></label>
+            <label>E-mail<input name="email" type="email" maxlength="254" /></label>
+            <button id="client-submit" type="submit">Adicionar cliente</button>
+            <button id="client-cancel" class="secondary hidden" type="button">Cancelar</button>
+          </form>
+          <p id="client-message" class="message" role="status"></p>
+          <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>País</th><th>E-mail</th><th>Ações</th></tr></thead><tbody id="clients-body"></tbody></table></div>
+        </div>
+
+        <div class="card">
+          <h2>Indicadores</h2><div id="indicators" class="indicator-grid"></div>
+          <h3>Envios recentes</h3><ul id="recent-shipments" class="recent-list"></ul>
+        </div>
+
+        <div class="card">
+          <h2>Registrar envio</h2>
+          <form id="shipment-form">
+            <div class="form-grid">
+              <label>Amostra<select name="amostraId" required><option value="">Selecione</option></select></label>
+              <label>Cliente<select name="clienteId" required><option value="">Selecione</option></select></label>
+              <label>País de destino<input name="paisDestino" maxlength="100" /></label>
+              <label>Data do envio<input name="dataEnvio" type="date" required /></label>
+              <label>Quantidade enviada (kg)<input name="quantidadeEnviada" type="number" min="0.001" step="0.001" required /></label>
+              <label>Referência (opcional)<input name="referencia" maxlength="120" /></label>
+              <label class="full-width">Observações<textarea name="observacoes" rows="2"></textarea></label>
+            </div>
+            <button type="submit">Registrar envio</button>
+          </form>
+          <p id="shipment-message" class="message" role="status"></p>
+        </div>
+
+        <div class="card">
+          <div class="section-heading"><h2 id="sample-form-title">Receber amostra</h2><button id="cancel-edit" class="secondary hidden" type="button">Cancelar edição</button></div>
+          <form id="sample-form">
+            <div class="form-grid">
+              <label>Código da amostra<input name="codigo" maxlength="80" required /></label>
+              <label>Fornecedor<select name="fornecedorId" required><option value="">Selecione</option></select></label>
+              <label>Classificação<input name="classificacao" maxlength="120" /></label>
+              <label>Data de recebimento<input name="dataRecebimento" type="date" required /></label>
+              <label>Quantidade recebida (kg)<input name="quantidadeRecebida" type="number" min="0.001" step="0.001" required /></label>
+              <label>Localização<input name="localizacao" maxlength="120" /></label>
+              <label class="full-width">Observações<textarea name="observacoes" rows="2"></textarea></label>
+            </div>
+            <button id="sample-submit" type="submit">Salvar amostra</button>
+          </form>
+          <p id="sample-message" class="message" role="status"></p>
+        </div>
+
+        <div class="card">
+          <div class="section-heading"><div><h2>Inventário</h2><p class="muted">A quantidade disponível considera os envios registrados.</p></div><div class="button-row"><button id="refresh-button" class="secondary" type="button">Atualizar</button><button id="export-csv" class="secondary" type="button">Exportar CSV</button><button id="print-report" class="secondary" type="button">Imprimir / PDF</button></div></div>
+          <form id="sample-filters" class="filter-form">
+            <label>Código<input name="codigo" maxlength="80" /></label>
+            <label>Fornecedor<select name="fornecedorId"><option value="">Todos</option></select></label>
+            <label>Classificação<input name="classificacao" maxlength="120" /></label>
+            <label>Localização<input name="localizacao" maxlength="120" /></label>
+            <label>Recebido a partir de<input name="recebidaDe" type="date" /></label>
+            <label>Recebido até<input name="recebidaAte" type="date" /></label>
+            <label>Situação<select name="status"><option value="">Todas</option><option value="disponivel">Disponível</option><option value="esgotada">Esgotada</option></select></label>
+            <button type="submit">Filtrar</button><button id="clear-filters" type="button" class="secondary">Limpar</button>
+          </form>
+          <p id="list-message" class="message" role="status"></p>
+          <div class="table-wrap"><table id="samples-table">
+            <thead><tr><th>Código</th><th>Fornecedor</th><th>Classificação</th><th>Recebida</th><th>Enviada</th><th>Disponível</th><th>Localização</th><th>Ações</th></tr></thead>
+            <tbody id="samples-body"></tbody>
+          </table></div>
+        </div>
+
+        <div class="card"><div class="section-heading"><h2>Histórico de envios</h2><button id="refresh-shipments" class="secondary" type="button">Atualizar</button></div>
+          <form id="shipment-filters" class="filter-form">
+            <label>Amostra<input name="amostra" maxlength="80" /></label>
+            <label>Cliente<select name="clienteId"><option value="">Todos</option></select></label>
+            <label>Enviado a partir de<input name="dataDe" type="date" /></label>
+            <label>Enviado até<input name="dataAte" type="date" /></label>
+            <button type="submit">Filtrar</button><button id="clear-shipment-filters" type="button" class="secondary">Limpar</button>
+          </form>
+          <p id="shipments-message" class="message" role="status"></p>
+          <div class="table-wrap"><table><thead><tr><th>Data</th><th>Amostra</th><th>Cliente</th><th>País</th><th>Quantidade</th><th>Referência</th><th>Responsável</th></tr></thead><tbody id="shipments-body"></tbody></table></div>
+        </div>
       </section>
     </main>
-
     <script src="./script.js"></script>
   </body>
 </html>

@@ -1,34 +1,40 @@
 # Fluxa
 
-Sistema web para organizar e rastrear amostras comerciais de café verde. Esta etapa implementa a estrutura relacional MySQL, cadastro e login de usuários, autenticação JWT e autorização por perfil.
+Sistema web para organizar e rastrear amostras comerciais de café verde. O sistema reúne recebimentos, inventário e envios, substituindo controles dispersos em planilhas.
 
 ## Tecnologias
 
-- API: Node.js e Express
-- Banco de dados: MySQL
+- Front-end: HTML, CSS e JavaScript com Fetch e manipulação do DOM
+- Back-end: Node.js 18 ou superior e Express
+- Banco de dados: MySQL 8.0.16 ou superior
 - Senhas: bcryptjs
-- Tokens: JSON Web Token (JWT)
+- Autenticação: JWT
 
 ## Estrutura
 
 ```text
 backend/
-  controllers/   Regras de autenticação e usuários
-  database/      Pool e conexão com MySQL
+  controllers/   Regras de autenticação, usuários, amostras, fornecedores, clientes e envios
+  database/      Pool e conexão MySQL
   middleware/    CORS, autenticação e autorização
   routes/        Rotas da API
-  utils/         Carregamento de ambiente e erros HTTP
-sql/schema.sql   Criação do banco e das tabelas
+  utils/         Leitura de ambiente e erros HTTP
+frontend/        Login, cadastros, inventário, envios e indicadores
+sql/schema.sql   Criação do banco, tabelas e relacionamentos
+sql/seed.sql     Dados fictícios opcionais para desenvolvimento
 ```
 
-O banco `fluxa` contém as tabelas `perfis`, `usuarios`, `fornecedores`, `clientes`, `amostras` e `envios`, com chaves primárias, restrições únicas, índices e chaves estrangeiras. As tabelas de amostras e envios permitem manter o histórico; envios apontam para a amostra, o cliente e o funcionário responsável.
+## Banco de dados
 
-## Configuração
+O banco `fluxa` contém `perfis`, `usuarios`, `fornecedores`, `clientes`, `amostras` e `envios`. O esquema define chaves primárias e estrangeiras, índices e restrições. Envios mantêm o histórico relacionado à amostra, cliente e responsável. Use MySQL 8.0.16 ou superior para aplicar também as restrições `CHECK` de quantidade positiva.
 
-1. Crie o banco e as tabelas executando `sql/schema.sql` no MySQL. O script cria o banco `fluxa` se ele ainda não existir.
-2. Copie `backend/.env.example` para `backend/.env` e informe as credenciais do MySQL.
-3. Defina `JWT_SECRET` como uma chave aleatória com no mínimo 32 caracteres. Não use a mesma chave em produção e não versione o arquivo `.env`.
-4. Instale e inicie o backend:
+`sql/seed.sql` insere fornecedores, clientes, amostras e um envio fictícios para demonstração. Execute-o depois de `sql/schema.sql`. Ele não cria usuários: cadastre a primeira conta pela API para gerar o hash da senha.
+
+## Instalação e execução
+
+1. Execute `sql/schema.sql` no MySQL para criar o banco e as tabelas. Opcionalmente, execute `sql/seed.sql` para inserir dados de demonstração.
+2. Copie `backend/.env.example` para `backend/.env`. Configure o acesso ao MySQL e defina `JWT_SECRET` como uma chave aleatória com pelo menos 32 caracteres.
+3. Instale dependências e inicie a API:
 
 ```bash
 cd backend
@@ -36,47 +42,54 @@ npm install
 npm start
 ```
 
-A API fica disponível em `http://localhost:3000`. Ela inicia mesmo se o MySQL estiver indisponível; as rotas que acessam o banco responderão com erro até que a conexão esteja ativa.
+4. Sirva a pasta `frontend` por um servidor local, como a extensão Live Server do VS Code. A URL padrão da API é `http://localhost:3000/api`. Pode-se definir `window.FLUXA_API_URL` antes de `script.js` para alterar essa URL.
+5. Acesse a interface e crie a primeira conta, que receberá o perfil de administrador. Cadastre fornecedores e clientes para começar a registrar amostras e envios.
+
+`GET /api/health` verifica se a API está ativa e `GET /api/health/database` verifica a conexão MySQL. Não envie `backend/.env`, senhas ou tokens ao GitHub.
 
 ## Endpoints
+
+Rotas protegidas exigem `Authorization: Bearer <token>`.
 
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
 | GET | `/api/health` | Público | Verifica a API |
-| GET | `/api/health/database` | Público | Verifica a conexão MySQL |
-| POST | `/api/auth/register` | Público | Cadastra usuário; o primeiro recebe perfil administrador e os demais, funcionário |
-| POST | `/api/auth/login` | Público | Valida credenciais e retorna JWT |
-| GET | `/api/auth/me` | JWT | Retorna o usuário autenticado |
+| GET | `/api/health/database` | Público | Verifica a conexão com MySQL |
+| POST | `/api/auth/register` | Público | Cadastra conta; o primeiro usuário é administrador |
+| POST | `/api/auth/login` | Público | Login e emissão do JWT |
+| GET | `/api/auth/me` | JWT | Consulta o usuário autenticado |
 | GET | `/api/usuarios` | Administrador | Lista usuários |
-| POST | `/api/usuarios` | Administrador | Cadastra funcionário ou administrador |
-| PATCH | `/api/usuarios/:id/perfil` | Administrador | Altera o perfil de um usuário |
-| PATCH | `/api/usuarios/:id/status` | Administrador | Ativa ou desativa um usuário |
+| POST | `/api/usuarios` | Administrador | Cria usuário |
+| PATCH | `/api/usuarios/:id/perfil` | Administrador | Altera o perfil |
+| PATCH | `/api/usuarios/:id/status` | Administrador | Ativa ou desativa uma conta |
+| GET | `/api/fornecedores` | JWT | Lista fornecedores |
+| POST | `/api/fornecedores` | Administrador | Cadastra fornecedor |
+| PUT | `/api/fornecedores/:id` | Administrador | Atualiza fornecedor |
+| DELETE | `/api/fornecedores/:id` | Administrador | Exclui fornecedor sem amostras relacionadas |
+| GET | `/api/clientes` | JWT | Lista clientes |
+| POST | `/api/clientes` | Administrador | Cadastra cliente |
+| PUT | `/api/clientes/:id` | Administrador | Atualiza cliente |
+| DELETE | `/api/clientes/:id` | Administrador | Exclui cliente sem envios relacionados |
+| GET | `/api/amostras` | JWT | Lista amostras e estoque disponível; aceita filtros |
+| GET | `/api/amostras/:id` | JWT | Consulta amostra |
+| POST | `/api/amostras` | Administrador ou funcionário | Registra recebimento |
+| PUT | `/api/amostras/:id` | Administrador ou funcionário | Atualiza amostra |
+| DELETE | `/api/amostras/:id` | Administrador | Exclui amostra sem envios relacionados |
+| GET | `/api/envios` | JWT | Consulta histórico; aceita filtros |
+| POST | `/api/envios` | Administrador ou funcionário | Registra envio |
+| GET | `/api/indicadores` | JWT | Totais de estoque e envios recentes |
 
-### Cadastro inicial
+## Regras e permissões
 
-O primeiro cadastro deve ser feito após executar o esquema SQL. Ele recebe o perfil de administrador; cadastros públicos posteriores recebem o perfil de funcionário. O cadastro inicial é serializado no MySQL para evitar que duas requisições concorrentes criem mais de um administrador inicial.
+- Administradores podem criar e manter usuários, fornecedores e clientes, além de executar todas as operações de amostras.
+- Funcionários autenticados podem consultar cadastros, registrar e atualizar amostras e registrar envios.
+- Exclusões de cadastros relacionados a movimentos são bloqueadas para preservar o histórico.
+- O estoque disponível é calculado subtraindo todos os envios da quantidade recebida.
+- O registro de envio bloqueia a linha da amostra e verifica o saldo dentro de uma transação, prevenindo envio acima do estoque em requisições concorrentes.
+- A quantidade recebida não pode ser reduzida abaixo da soma já enviada. Quantidades devem ser positivas e ter até três casas decimais.
+- O front-end permite filtrar inventário e histórico de envios, exportar o inventário filtrado para CSV e imprimir/salvar o relatório como PDF pelo navegador.
+- Senhas são armazenadas como hash bcrypt. JWT expira em oito horas por padrão (`JWT_EXPIRES_IN` altera o período). O usuário é consultado no banco em cada requisição protegida, então contas desativadas perdem acesso imediatamente.
 
-```json
-{
-  "nome": "Ana Silva",
-  "email": "ana@empresa.com",
-  "senha": "uma-senha-segura"
-}
-```
+## Entrega final
 
-O cadastro e o login retornam `{ "usuario": ..., "token": "..." }`. Envie o token para rotas protegidas no cabeçalho:
-
-```text
-Authorization: Bearer <token>
-```
-
-Senhas precisam ter pelo menos oito caracteres e são armazenadas como hash bcrypt. O JWT expira em oito horas por padrão; isso pode ser alterado com `JWT_EXPIRES_IN`. O middleware consulta o usuário no banco a cada requisição protegida, então usuários desativados perdem o acesso imediatamente.
-
-## Perfis
-
-- **administrador**: pode consultar usuários, criar usuários e alterar perfil ou status.
-- **funcionario**: pode autenticar-se e consultar o próprio perfil. As demais permissões serão aplicadas quando os módulos operacionais forem implementados.
-
-## Configuração do ambiente
-
-Veja `backend/.env.example` para as variáveis `PORT`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `JWT_EXPIRES_IN` e `FRONTEND_ORIGIN`. O nome padrão do banco é `fluxa`.
+Antes da apresentação, instalar dependências e atualizar o `package-lock.json` com `npm install`, executar a aplicação ponta a ponta com MySQL e conferir os fluxos de login, permissões, recebimento, estoque e envio. Atualizar este README com os passos de teste confirmados. A apresentação deve explicar o problema, usuários, arquitetura, banco, autenticação, permissões, CRUD, regras de negócio e demonstrar o sistema funcionando.
